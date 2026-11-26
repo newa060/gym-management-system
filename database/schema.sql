@@ -83,15 +83,7 @@ CREATE TABLE IF NOT EXISTS `registrations` (
     CONSTRAINT `fk_registrations_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Application settings table
-CREATE TABLE IF NOT EXISTS `settings` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `setting_key` VARCHAR(50) NOT NULL UNIQUE,
-    `setting_value` TEXT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 9. System users / admin accounts table
+-- 8. System users / admin accounts table
 CREATE TABLE IF NOT EXISTS `users` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NOT NULL UNIQUE,
@@ -122,13 +114,6 @@ INSERT INTO `membership_plans` (`id`, `plan_name`, `duration_days`, `price`) VAL
 (2, 'Quarterly Standard', 90, 120.00),
 (3, 'Annual Premium', 365, 420.00)
 ON DUPLICATE KEY UPDATE `plan_name` = VALUES(`plan_name`);
-
--- Seed data for settings
-INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
-('gym_name', 'Apex Fitness Club'),
-('contact_email', 'admin@apexfitness.local'),
-('default_class_capacity', '15')
-ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 -- Seed sample members
 INSERT INTO `members` (`id`, `first_name`, `last_name`, `email`, `phone`, `date_of_birth`, `status_id`, `joined_on`) VALUES

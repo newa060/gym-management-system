@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
     $edit_class = $class_model->getById((int)$_GET['id']);
 }
 
-$default_capacity = (int)get_setting($pdo_connection, 'default_class_capacity', '15');
+$default_capacity = 15;
 $all_classes = $class_model->getAll();
 $instructors = $class_model->getInstructors();
 ?>

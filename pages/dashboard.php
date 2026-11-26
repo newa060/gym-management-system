@@ -23,7 +23,7 @@ $membership_model->syncExpiredMemberships();
 $active_members_count = $member_model->getActiveCount();
 $expiring_memberships = $membership_model->getExpiringSoon(7);
 $today_classes = $class_model->getTodayClasses();
-$gym_title = get_setting($pdo_connection, 'gym_name', 'Gym Management System');
+$gym_title = 'Apex Fitness Club';
 ?>
 
 <div class="dashboard-header">
