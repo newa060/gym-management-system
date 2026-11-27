@@ -12,7 +12,7 @@ define('DB_HOST', 'localhost');
 /**
  * Name of the database schema for the gym system.
  */
-define('DB_NAME', 'gym_system');
+define('DB_NAME', 'gym_db');
 
 /**
  * Database user account for authenticating the connection.

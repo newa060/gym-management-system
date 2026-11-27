@@ -1,10 +1,10 @@
 -- Database Schema for Gym Membership & Class Management System
--- Database: gym_system
+-- Database: gym_db
 -- Storage Engine: InnoDB
 -- Character Set: utf8mb4
 
-CREATE DATABASE IF NOT EXISTS `gym_system` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `gym_system`;
+CREATE DATABASE IF NOT EXISTS `gym_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `gym_db`;
 
 -- 1. Member statuses lookup table
 CREATE TABLE IF NOT EXISTS `member_statuses` (
