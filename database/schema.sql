@@ -146,3 +146,120 @@ ON DUPLICATE KEY UPDATE `attendance_status` = VALUES(`attendance_status`);
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `full_name`, `role`) VALUES
 (1, 'admin', 'admin@apexfitness.local', '$2y$10$tX4QrijBGcgUzPxVtHEFfuTwawcjTwunDc3iFGcNoCwPmsg1bs9IO', 'System Administrator', 'admin')
 ON DUPLICATE KEY UPDATE `username` = VALUES(`username`);
+
+
+-- ========================================================
+-- 9. Views
+-- ========================================================
+
+-- View: Class Schedule & Real-Time Seat Availability
+CREATE OR REPLACE VIEW `v_class_availability` AS
+SELECT 
+    c.id AS class_id,
+    c.class_name,
+    c.class_date,
+    c.start_time,
+    c.room,
+    c.capacity,
+    i.full_name AS instructor_name,
+    COUNT(r.id) AS registered_count,
+    (c.capacity - COUNT(r.id)) AS seats_remaining
+FROM `classes` c
+JOIN `instructors` i ON c.instructor_id = i.id
+LEFT JOIN `registrations` r ON c.id = r.class_id
+GROUP BY c.id, c.class_name, c.class_date, c.start_time, c.room, c.capacity, i.full_name;
+
+-- View: Member Profile and Active Membership Overview
+CREATE OR REPLACE VIEW `v_member_overview` AS
+SELECT 
+    m.id AS member_id,
+    CONCAT(m.first_name, ' ', m.last_name) AS member_name,
+    m.email,
+    m.phone,
+    s.status_name,
+    p.plan_name,
+    ms.start_date,
+    ms.end_date,
+    ms.status AS membership_status,
+    DATEDIFF(ms.end_date, CURDATE()) AS days_remaining
+FROM `members` m
+JOIN `member_statuses` s ON m.status_id = s.id
+LEFT JOIN `memberships` ms ON m.id = ms.member_id AND ms.status = 'Active'
+LEFT JOIN `membership_plans` p ON ms.plan_id = p.id;
+
+-- ========================================================
+-- 10. Stored Procedures
+-- ========================================================
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS `sp_register_member`$$
+CREATE PROCEDURE `sp_register_member`(
+    IN p_member_id INT,
+    IN p_class_id INT
+)
+BEGIN
+    DECLARE v_capacity INT;
+    DECLARE v_taken INT;
+    DECLARE v_already_registered INT;
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+    
+    -- Check class exists and lock the row to prevent race conditions
+    SELECT capacity INTO v_capacity 
+    FROM classes 
+    WHERE id = p_class_id 
+    FOR UPDATE;
+
+    IF v_capacity IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: The selected class does not exist.';
+    END IF;
+
+    -- Check duplicate registration
+    SELECT COUNT(*) INTO v_already_registered 
+    FROM registrations 
+    WHERE member_id = p_member_id AND class_id = p_class_id;
+
+    IF v_already_registered > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: Member is already registered for this class.';
+    END IF;
+
+    -- Check capacity limit
+    SELECT COUNT(*) INTO v_taken 
+    FROM registrations 
+    WHERE class_id = p_class_id;
+
+    IF v_taken >= v_capacity THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: Class capacity has been reached. No seats available.';
+    END IF;
+
+    -- Insert confirmed registration
+    INSERT INTO registrations (member_id, class_id, attendance_status) 
+    VALUES (p_member_id, p_class_id, 'Registered');
+
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- ========================================================
+-- 11. Triggers
+-- ========================================================
+
+DELIMITER $$
+DROP TRIGGER IF EXISTS `trg_memberships_after_insert`$$
+CREATE TRIGGER `trg_memberships_after_insert`
+AFTER INSERT ON `memberships`
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Active' THEN
+        UPDATE `members`
+        SET `status_id` = 1
+        WHERE `id` = NEW.member_id;
+    END IF;
+END$$
+DELIMITER ;
